@@ -198,4 +198,4 @@ varlist = [
     #compplot(file1,"GenNtupler/gentree",var[0],var[3],var[4],var[5],var[6],var[1],var[2]+prefix+"_Barrel",var[1]+" Comparison Barrel"+prename,"(abs(genjetid)<6 || abs(genjetid)==21)"+barcut,"Q/G Jet","abs(genjetid)==15"+barcut,"Tau","(abs(genjetid)>=6 && abs(genjetid)!=21 && abs(genjetid)!=15)"+barcut,"Other")
     #compplot(file1,"GenNtupler/gentree",var[0],var[3],var[4],var[5],var[6],var[1],var[2]+prefix+"_Endcap",var[1]+" Comparison Endcap"+prename,"(abs(genjetid)<6 || abs(genjetid)==21)"+endcut,"Q/G Jet","abs(genjetid)==15"+endcut,"Tau","(abs(genjetid)>=6 && abs(genjetid)!=21 && abs(genjetid)!=15)"+endcut,"Other")
 
-dummy(file1, 
+dummy(file1, "GenNtupler/gentree")
