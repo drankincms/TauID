@@ -163,6 +163,20 @@ def distplot(filename1, treeNum, varname, nbins, low, high, cuts, logy, xlabel, 
 
 	cst.SaveAs("EGMDist_"+outname+".png") #save as png, can save as other types too (.pdf, .C, .root, ...)
 
+def dummy(filename1, treeNum):
+
+    f1 = TFile(filename1) #open file
+    tNum1 = f1.Get(treeNum) #get TTree
+
+    i = 0
+    for event in tNum1:
+        if (i>10): break
+        for j in range(len(event.genjetid)):
+            print 'Event '+str(i)+' jet '+str(j)+' contains'
+            for k in range(len(event.genindex)):
+                if (event.genindex[k] is j): print '\t ID '+str(event.genid[k])
+        i=i+1
+
 
 file1 = "GenNtuple.root"
 prefix = "_GluGluHToTauTau"
@@ -178,8 +192,10 @@ varlist = [
 	,['abs(genjetid)','gen jet ID','genjetID',30,0,30,True]
 ]
 
-for var in varlist:
-    distplot(file1,"GenNtupler/gentree",var[0],var[3],var[4],var[5],"1"+barcut,var[6],var[1],var[2]+prefix+"_Barrel",var[1]+" Distribution Barrel"+prename)
-    distplot(file1,"GenNtupler/gentree",var[0],var[3],var[4],var[5],"1"+endcut,var[6],var[1],var[2]+prefix+"_Endcap",var[1]+" Distribution Endcap"+prename)
-    compplot(file1,"GenNtupler/gentree",var[0],var[3],var[4],var[5],var[6],var[1],var[2]+prefix+"_Barrel",var[1]+" Comparison Barrel"+prename,"(abs(genjetid)<6 || abs(genjetid)==21)"+barcut,"Q/G Jet","abs(genjetid)==15"+barcut,"Tau","(abs(genjetid)>=6 && abs(genjetid)!=21 && abs(genjetid)!=15)"+barcut,"Other")
-    compplot(file1,"GenNtupler/gentree",var[0],var[3],var[4],var[5],var[6],var[1],var[2]+prefix+"_Endcap",var[1]+" Comparison Endcap"+prename,"(abs(genjetid)<6 || abs(genjetid)==21)"+endcut,"Q/G Jet","abs(genjetid)==15"+endcut,"Tau","(abs(genjetid)>=6 && abs(genjetid)!=21 && abs(genjetid)!=15)"+endcut,"Other")
+#for var in varlist:
+    #distplot(file1,"GenNtupler/gentree",var[0],var[3],var[4],var[5],"1"+barcut,var[6],var[1],var[2]+prefix+"_Barrel",var[1]+" Distribution Barrel"+prename)
+    #distplot(file1,"GenNtupler/gentree",var[0],var[3],var[4],var[5],"1"+endcut,var[6],var[1],var[2]+prefix+"_Endcap",var[1]+" Distribution Endcap"+prename)
+    #compplot(file1,"GenNtupler/gentree",var[0],var[3],var[4],var[5],var[6],var[1],var[2]+prefix+"_Barrel",var[1]+" Comparison Barrel"+prename,"(abs(genjetid)<6 || abs(genjetid)==21)"+barcut,"Q/G Jet","abs(genjetid)==15"+barcut,"Tau","(abs(genjetid)>=6 && abs(genjetid)!=21 && abs(genjetid)!=15)"+barcut,"Other")
+    #compplot(file1,"GenNtupler/gentree",var[0],var[3],var[4],var[5],var[6],var[1],var[2]+prefix+"_Endcap",var[1]+" Comparison Endcap"+prename,"(abs(genjetid)<6 || abs(genjetid)==21)"+endcut,"Q/G Jet","abs(genjetid)==15"+endcut,"Tau","(abs(genjetid)>=6 && abs(genjetid)!=21 && abs(genjetid)!=15)"+endcut,"Other")
+
+dummy(file1, 
