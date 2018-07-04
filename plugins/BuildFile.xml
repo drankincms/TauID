@@ -6,4 +6,5 @@
 <use name="SimDataFormats/GeneratorProducts"/>
 <use name="DataFormats/HepMCCandidate"/>
 <use name="DataFormats/JetReco"/>
+<use name="DataFormats/Common"/>
 <flags EDM_PLUGIN="1"/>

@@ -34,6 +34,7 @@
 
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/JetReco/interface/GenJet.h"
+#include "DataFormats/Common/interface/RefToPtr.h"
 
 #include "TTree.h"
 #include "TLorentzVector.h"
@@ -48,7 +49,7 @@ class GenNtupler : public edm::EDAnalyzer {
       ~GenNtupler();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
-
+      void addMother(const reco::GenParticle& iPart,int &iPartId,int &ig,  std::vector<edm::Ptr<reco::GenParticle>> &iMothers,  std::vector<std::pair<edm::Ptr<reco::GenParticle>,int> >  &iMothersAdded);
 
    private:
       virtual void beginJob() override;
@@ -62,6 +63,9 @@ class GenNtupler : public edm::EDAnalyzer {
       std::vector<float> genphi_;
       std::vector<float> genet_;
       std::vector<int>   genid_;
+      std::vector<int>   genpartid_;
+      std::vector<int>   genstatus_;
+      std::vector<int>   genparent_;
       std::vector<int>   genindex_;
 
       std::vector<float> genjetpt_;
@@ -112,7 +116,10 @@ GenNtupler::GenNtupler(const edm::ParameterSet& iConfig):
   gentree->Branch("genphi", &genphi_);
   gentree->Branch("genet", &genet_);
   gentree->Branch("genid", &genid_);
+  gentree->Branch("genpartid", &genpartid_);
   gentree->Branch("genindex", &genindex_);
+  gentree->Branch("genparent", &genparent_);
+  gentree->Branch("genstatus", &genstatus_);
 
   gentree->Branch("genjetpt", &genjetpt_);
   gentree->Branch("genjeteta", &genjeteta_);
@@ -152,26 +159,31 @@ GenNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    genphi_.clear();
    genet_.clear();
    genid_.clear();
+   genpartid_.clear();
    genindex_.clear();
+   genstatus_.clear();
+   genparent_.clear();
    genjetpt_.clear();
    genjeteta_.clear();
    genjetphi_.clear();
    genjetet_.clear();
    genjetid_.clear();
 
+   std::vector<edm::Ptr<reco::GenParticle>> lMothers;
+   std::vector<std::pair<edm::Ptr<reco::GenParticle>,int> > lMothersAdded;
    std::vector<std::pair<TLorentzVector,int>> promptgenv;
    std::pair<TLorentzVector,int> tmpv;
-   for (size_t i = 0; i < genParticles->size(); i++){
-        const reco::GenParticle & p = (*genParticles).at(i);
-        if (p.statusFlags().isPrompt()) {
-            tmpv.first.SetPtEtaPhiE(p.pt(),p.eta(),p.phi(),p.energy());
-            tmpv.second = p.pdgId();
-            promptgenv.push_back(tmpv);
-        }
+   for (reco::GenParticleCollection::const_iterator itGenP = genParticles->begin(); itGenP!=genParticles->end(); ++itGenP) {
+     const reco::GenParticle & p = *itGenP;
+     tmpv.first.SetPtEtaPhiE(p.pt(),p.eta(),p.phi(),p.energy());
+     tmpv.second = p.pdgId();
+     promptgenv.push_back(tmpv);
+     edm::Ptr<reco::GenParticle> thePtr(genParticles, itGenP - genParticles->begin());
+     lMothers.emplace_back(thePtr);
    }
 
    int ig = 0;
-
+   int lPartId = 0;
    for (const reco::GenJet &j : *genJets){
        if (j.pt()<minJetPt_) continue;
        genjetpt_.push_back(j.pt());
@@ -188,16 +200,28 @@ GenNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
        }
        genjetid_.push_back(jetid);
        for (unsigned int id = 0, nd = j.numberOfDaughters(); id < nd; ++id) {
-           if ( !(j.daughterPtr(id).isNonnull()) ) continue;
-           if ( !(j.daughterPtr(id).isAvailable()) ) continue;
-           const reco::Candidate &_ijet_const = dynamic_cast<const reco::Candidate &>(*j.daughter(id));
-           if (_ijet_const.pt()<minGenPt_) continue;
-           genpt_.push_back(_ijet_const.pt());
-           geneta_.push_back(_ijet_const.eta());
-           genphi_.push_back(_ijet_const.phi());
-           genet_.push_back(_ijet_const.et());
-           genid_.push_back(_ijet_const.pdgId());
-           genindex_.push_back(ig);
+	 if ( !(j.daughterPtr(id).isNonnull()) ) continue;
+	 if ( !(j.daughterPtr(id).isAvailable()) ) continue;
+	 const reco::Candidate &_ijet_const = dynamic_cast<const reco::Candidate &>(*j.daughter(id));
+	 if (_ijet_const.pt()<minGenPt_) continue;
+	 genpt_.push_back(_ijet_const.pt());
+	 geneta_.push_back(_ijet_const.eta());
+	 genphi_.push_back(_ijet_const.phi());
+	 genet_.push_back(_ijet_const.et());
+	 genid_.push_back(_ijet_const.pdgId());
+	 genstatus_.push_back(_ijet_const.status());
+	 genpartid_.push_back(lPartId);
+	 genindex_.push_back(ig);
+	 lPartId++;
+	 for (reco::GenParticleCollection::const_iterator itGenP = genParticles->begin(); itGenP!=genParticles->end(); ++itGenP) {
+	   //if(!itGenP->statusFlags().isPrompt()) continue;
+	   //if(itGenP->pdgId()  != _ijet_const.pdgId()) continue;
+	   if(fabs(itGenP->pt()-_ijet_const.pt())   > 0.1)  continue;
+	   if(fabs(itGenP->eta()-_ijet_const.eta()) > 0.01) continue;
+	   addMother(*itGenP,lPartId,ig,lMothers,lMothersAdded);
+	   //std::cout << "==> " << _ijet_const.pdgId() << " -- " << itGenP->pdgId() << " -- " << itGenP->eta() << " -- " << _ijet_const.eta() << " -- " << _ijet_const.phi() << " -- " << itGenP->phi() << " -- " << itGenP->status()  << " -- " << _ijet_const.status()  << " -- " << _ijet_const.pt() << " -- " << itGenP->pt() << std::endl;
+	   break;
+	 }
        }
        ig++;
    }
@@ -205,7 +229,35 @@ GenNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    gentree->Fill();
 
 }
-
+void GenNtupler::addMother(const reco::GenParticle& iPart,int &iPartId,int &ig,  std::vector<edm::Ptr<reco::GenParticle>> &iMothers,  std::vector<std::pair<edm::Ptr<reco::GenParticle>,int> >  &iMothersAdded) { 
+  int pId = -2;
+  genparent_.push_back(pId);
+  int genIndex =  genparent_.size()-1;
+  if(iPart.numberOfMothers() >  0 ) {
+    edm::Ptr<reco::GenParticle> lMomPtr = edm::refToPtr(iPart.motherRef()); 
+    for(unsigned int im=0; im < iMothers.size(); ++im) { 
+      if(iMothers[im] != lMomPtr) continue;
+      for(unsigned int im1=0; im1 < iMothersAdded.size(); ++im1) { 
+	if(iMothers[im] != iMothersAdded[im1].first) continue;
+	pId = iMothersAdded[im1].second;
+      }
+      if(pId == -2) { //not added
+	genpt_.push_back(iMothers[im]->pt());
+	geneta_.push_back(iMothers[im]->eta());
+	genphi_.push_back(iMothers[im]->phi());
+	genet_.push_back(iMothers[im]->et());
+	genid_.push_back(iMothers[im]->pdgId());
+	genstatus_.push_back(iMothers[im]->status());
+	genpartid_.push_back(iPartId);
+	genindex_.push_back(ig);
+	iMothersAdded.emplace_back(std::pair<edm::Ptr<reco::GenParticle>,int>(lMomPtr,iPartId));
+	iPartId++;
+	addMother(*lMomPtr,iPartId,ig,iMothers,iMothersAdded);
+      }
+    }
+    genparent_[genIndex] = pId;
+  }
+}
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
