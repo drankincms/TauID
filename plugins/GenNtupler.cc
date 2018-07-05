@@ -214,16 +214,17 @@ GenNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	 genindex_.push_back(ig);
 	 lPartId++;
 	 bool lFill = false;
+	 //std::cout << "==> " << _ijet_const.pdgId() << " -- " << _ijet_const.eta() << " -- " << _ijet_const.pt()  << std::endl;
 	 for (reco::GenParticleCollection::const_iterator itGenP = genParticles->begin(); itGenP!=genParticles->end(); ++itGenP) {
 	   //if(!itGenP->statusFlags().isPrompt()) continue;
 	   //if(itGenP->pdgId()  != _ijet_const.pdgId()) continue;
 	   if(fabs(itGenP->pt()-_ijet_const.pt())   > 0.1)  continue;
 	   if(fabs(itGenP->eta()-_ijet_const.eta()) > 0.01) continue;
 	   addMother(*itGenP,lPartId,ig,lMothers,lMothersAdded);
-	   //std::cout << "==> " << _ijet_const.pdgId() << " -- " << itGenP->pdgId() << " -- " << itGenP->eta() << " -- " << _ijet_const.eta() << " -- " << _ijet_const.phi() << " -- " << itGenP->phi() << " -- " << itGenP->status()  << " -- " << _ijet_const.status()  << " -- " << _ijet_const.pt() << " -- " << itGenP->pt() << std::endl;
 	   lFill=true;
 	   break;
 	 }
+	 //std::cout << "===> Dump " << std::endl;
 	 if(!lFill) { 
 	   int pId = -2;
 	   genparent_.push_back(pId);
@@ -239,14 +240,17 @@ void GenNtupler::addMother(const reco::GenParticle& iPart,int &iPartId,int &ig, 
   int pId = -2;
   genparent_.push_back(pId);
   int genIndex =  genparent_.size()-1;
+  //std::cout << "===> Moms " << iPart.numberOfMothers() << " -- " << iPart.pdgId() << std::endl;
   if(iPart.numberOfMothers() >  0 ) {
     edm::Ptr<reco::GenParticle> lMomPtr = edm::refToPtr(iPart.motherRef()); 
     for(unsigned int im=0; im < iMothers.size(); ++im) { 
       if(iMothers[im] != lMomPtr) continue;
+      //std::cout << "==> " << _ijet_const.pdgId() << " -- " << itGenP->pdgId() << " -- " << itGenP->eta() << " -- " << _ijet_const.eta() << " -- " << _ijet_const.phi() << " -- " << itGenP->phi() << " -- " << itGenP->status()  << " -- " << _ijet_const.status()  << " -- " << _ijet_const.pt() << " -- " << itGenP->pt() << std::endl;
       for(unsigned int im1=0; im1 < iMothersAdded.size(); ++im1) { 
 	if(iMothers[im] != iMothersAdded[im1].first) continue;
 	pId = iMothersAdded[im1].second;
       }
+      //std::cout << "==> " << iMothers[im]->pdgId() << " == " << iMothers[im]->pt() << " -- " << iMothers[im]->eta() << " -- " << iMothers[im]->status() << " -- " << pId << std::endl;
       if(pId == -2) { //not added
 	genpt_.push_back(iMothers[im]->pt());
 	geneta_.push_back(iMothers[im]->eta());
@@ -256,6 +260,7 @@ void GenNtupler::addMother(const reco::GenParticle& iPart,int &iPartId,int &ig, 
 	genstatus_.push_back(iMothers[im]->status());
 	genpartid_.push_back(iPartId);
 	genindex_.push_back(ig);
+	pId = iPartId;
 	iMothersAdded.emplace_back(std::pair<edm::Ptr<reco::GenParticle>,int>(lMomPtr,iPartId));
 	iPartId++;
 	addMother(*lMomPtr,iPartId,ig,iMothers,iMothersAdded);
