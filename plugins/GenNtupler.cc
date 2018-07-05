@@ -213,6 +213,7 @@ GenNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	 genpartid_.push_back(lPartId);
 	 genindex_.push_back(ig);
 	 lPartId++;
+	 bool lFill = false;
 	 for (reco::GenParticleCollection::const_iterator itGenP = genParticles->begin(); itGenP!=genParticles->end(); ++itGenP) {
 	   //if(!itGenP->statusFlags().isPrompt()) continue;
 	   //if(itGenP->pdgId()  != _ijet_const.pdgId()) continue;
@@ -220,7 +221,12 @@ GenNtupler::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	   if(fabs(itGenP->eta()-_ijet_const.eta()) > 0.01) continue;
 	   addMother(*itGenP,lPartId,ig,lMothers,lMothersAdded);
 	   //std::cout << "==> " << _ijet_const.pdgId() << " -- " << itGenP->pdgId() << " -- " << itGenP->eta() << " -- " << _ijet_const.eta() << " -- " << _ijet_const.phi() << " -- " << itGenP->phi() << " -- " << itGenP->status()  << " -- " << _ijet_const.status()  << " -- " << _ijet_const.pt() << " -- " << itGenP->pt() << std::endl;
+	   lFill=true;
 	   break;
+	 }
+	 if(!lFill) { 
+	   int pId = -2;
+	   genparent_.push_back(pId);
 	 }
        }
        ig++;
